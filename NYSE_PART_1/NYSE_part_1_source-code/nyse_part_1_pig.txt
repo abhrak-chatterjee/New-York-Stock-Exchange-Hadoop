@@ -1,0 +1,13 @@
+A = load '/root/nyse_prices/*' using PigStorage(',') as (exchange:chararray,stock_symbol:chararray,date:chararray,stock_price_open:double,stock_price_high:double,stock_price_low:double,stock_price_close:double,stock_volume:double,stock_price_adj_close:double);
+B = foreach A generate $1,$2,$3,$6;
+C = filter B by stock_symbol!='stock_symbol';
+D = filter C by SUBSTRING(date,0,4)=='2009';
+E = foreach D generate $0,($3-$2) as stock_increase;
+F = foreach E generate $0,(stock_increase>0?1:0) as SC;
+G = foreach F generate F $0,SC,1 as SC1;
+H = group G by stock_symbol;
+I = foreach H generate group,SUM(G.SC) as S,SUM(G.SC1) as S1;
+J = foreach I generate $0,(((double)S/S1)*100.00) as S2;
+K = foreach J generate (S@>67?'A':(S2>40?'B':'C')) as S3,1 as S4;
+L = group K by S3;
+M = foreach L generate group,SUM(K.S4);
